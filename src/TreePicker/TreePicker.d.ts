@@ -19,6 +19,9 @@ export interface TreePickerProps extends TreeBaseProps, FormControlPickerProps {
   /** Whether using virtualized list */
   virtualized?: boolean;
 
+  /** Whether the node can  be dragged */
+  draggable?: boolean;
+
   /** Set the option value for the expand node */
   defaultExpandItemValues?: any[];
 

@@ -2,11 +2,14 @@ import * as React from 'react';
 import _ from 'lodash';
 import { reactToString, shallowEqual, shallowEqualArray } from 'rsuite-utils/lib/utils';
 import { Node } from '../CheckTreePicker/utils';
+import { TREE_NODE_DRAG_TYPE } from '../constants';
 import { TreePickerProps } from '../TreePicker/TreePicker.d';
 import { CheckTreePickerProps } from '../CheckTreePicker/CheckTreePicker.d';
 
 const SEARCH_BAR_HEIGHT = 48;
 const MENU_PADDING = 12;
+// Tree Node 之间的 间隔
+const TREE_NODE_GAP = 8;
 
 /**
  * 判断当前节点是否应该显示
@@ -106,8 +109,9 @@ export function shouldDisplay(label: any, searchKeyword: string) {
  * @param {*} inline
  * @param {*} height
  */
-export function getVirtualLisHeight(inline: boolean, height = 0) {
-  return inline ? height - MENU_PADDING * 2 : height - SEARCH_BAR_HEIGHT - MENU_PADDING * 2;
+export function getVirtualLisHeight(inline: boolean, searchable: boolean, height = 0) {
+  const searchBarHeight = searchable ? SEARCH_BAR_HEIGHT : 0;
+  return inline ? height - MENU_PADDING * 2 : height - searchBarHeight - MENU_PADDING * 2;
 }
 
 /**
@@ -194,4 +198,49 @@ export function getExpandState(node: any, props: CheckTreePickerProps | TreePick
     return false;
   }
   return false;
+}
+
+/**
+ * 获取拖拽节点及子节点的key
+ * @param node
+ * @param childrenKey
+ * @param valueKey
+ */
+export function getDragNodeKeys(dragNode: any, childrenKey: string, valueKey: string) {
+  let dragNodeKeys: any[] = [dragNode[valueKey]];
+  const traverse = (data: any) => {
+    if (data?.length > 0) {
+      data.forEach((node: any) => {
+        dragNodeKeys = dragNodeKeys.concat([node[valueKey]]);
+        if (node[childrenKey]) {
+          traverse(node[childrenKey]);
+        }
+      });
+    }
+  };
+
+  traverse(dragNode[childrenKey]);
+
+  return dragNodeKeys;
+}
+
+export function calDropNodePosition(event: React.MouseEvent, treeNodeElement: Element) {
+  const { clientY } = event;
+  const { top, bottom } = treeNodeElement.getBoundingClientRect();
+  // console.log(`bottom + gap:${bottom + TREE_NODE_GAP}, clientY:${clientY}`);
+  console.log(`bottom :${bottom}, top: ${top}, clientY:${clientY}`);
+  // console.log(`top - gap:${top - TREE_NODE_GAP},  clientY:${clientY}`);
+  const gap = TREE_NODE_GAP;
+
+  // 处于节点下方
+  if (clientY >= bottom - gap) {
+    return TREE_NODE_DRAG_TYPE.DRAG_OVER_BOTTOM;
+  }
+
+  // 处于节点上方
+  if (clientY < top + gap) {
+    return TREE_NODE_DRAG_TYPE.DRAG_OVER_TOP;
+  }
+
+  return TREE_NODE_DRAG_TYPE.DRAG_OVER;
 }
